@@ -12,6 +12,7 @@ import com.bmuschko.gradle.docker.tasks.image.*
 import com.bmuschko.gradle.docker.tasks.*
 
 docker {
+<<<<<<< HEAD
     url = 'tcp://host.docker.internal:2375'
 //    url = 'unix:///var/run/docker.sock'
 //    url = 'tcp://127.0.0.1:2375'
