@@ -33,6 +33,7 @@ task dockerInit(type: Copy) {
 task dockerImageBuild(type: DockerBuildImage) {
     dependsOn dockerInit
 
+    images.add('dongpak/addressapi:latest')
     inputDir	= file("$buildDir/docker")
     dockerFile	= file("$buildDir/docker/jdk8.dockerfile")
     remove		= true
