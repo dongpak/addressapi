@@ -13,7 +13,7 @@ import com.bmuschko.gradle.docker.tasks.*
 
 docker {
 //    url = 'unix:///var/run/docker.sock'
-    url = 'tcp://KORYO:2375'
+    url = 'tcp://192.168.1.118:2375'
 //    url = 'npipe:////./pipe/docker_engine'
 }
 
