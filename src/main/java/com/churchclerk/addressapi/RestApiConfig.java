@@ -4,6 +4,7 @@
 package com.churchclerk.addressapi;
 
 
+import com.churchclerk.addressapi.api.AddressApi;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.springframework.stereotype.Component;
 
@@ -18,7 +19,6 @@ public class RestApiConfig extends ResourceConfig {
     }
 
     private void registerEndpoints() {
-        //register(MessagingApi.class);
-        //register(UsernameApi.class);
+        register(AddressApi.class);
     }
 }
