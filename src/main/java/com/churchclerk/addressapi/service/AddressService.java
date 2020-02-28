@@ -54,18 +54,48 @@ public class AddressService {
 		public Predicate toPredicate(Root<AddressEntity> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
 			List<Predicate> predicates	= new ArrayList<Predicate>();
 
-			if (criteria.getStreet() != null) {
-				predicates.add(criteriaBuilder.like(root.get("street"), "%" + criteria.getStreet() + "%"));
-			}
-			if (criteria.getCity() != null) {
-				predicates.add(criteriaBuilder.like(root.get("city"), criteria.getCity()));
-			}
+			addPredicate(criteriaBuilder, root, "street", criteria.getStreet(), predicates);
+			addPredicate(criteriaBuilder, root, "city", criteria.getCity(), predicates);
+			addPredicate(criteriaBuilder, root, "state", criteria.getState(), predicates);
+			addPredicate(criteriaBuilder, root, "zip", criteria.getZip(), predicates);
+			addPredicate(criteriaBuilder, root, "country", criteria.getCountry(), predicates);
+			addPredicate(criteriaBuilder, root, "active", criteria.isActive(), predicates);
 
 			if (predicates.isEmpty()) {
 				return null;
 			}
 
 			return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+		}
+
+		private void addPredicate(CriteriaBuilder criteriaBuilder, Root<AddressEntity> root, String field, String value, List<Predicate> predicates) {
+			Predicate predicate = null;
+
+			if (value != null) {
+				if (value.trim().isEmpty()) {
+					predicate = criteriaBuilder.isEmpty(root.get(field));
+				} else if (value.contains("%")) {
+					predicate = criteriaBuilder.like(root.get(field), value);
+				} else {
+					predicate = criteriaBuilder.equal(root.get(field), value);
+				}
+			}
+
+			if (predicate != null) {
+				predicates.add(predicate);
+			}
+		}
+
+		private void addPredicate(CriteriaBuilder criteriaBuilder, Root<AddressEntity> root, String field, Boolean value, List<Predicate> predicates) {
+			Predicate predicate = null;
+
+			if (value != null) {
+				predicate = criteriaBuilder.equal(root.get(field), value);
+			}
+
+			if (predicate != null) {
+				predicates.add(predicate);
+			}
 		}
 	}
 

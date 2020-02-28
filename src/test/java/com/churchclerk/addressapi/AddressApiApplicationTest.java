@@ -1,0 +1,156 @@
+package com.churchclerk.addressapi;
+
+
+import com.churchclerk.addressapi.api.AddressApi;
+import com.churchclerk.addressapi.model.Address;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.http.ResponseEntity;
+
+import java.util.UUID;
+
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+public class AddressApiApplicationTest {
+
+	@Autowired
+	private AddressApi api;
+
+	@LocalServerPort
+	private int port;
+
+	@Autowired
+	private TestRestTemplate restTemplate;
+
+	@Test
+	public void contexLoads() throws Exception {
+		Assertions.assertThat(api).isNotNull();
+	}
+
+	@Test
+	public void testGetResources() throws Exception {
+
+		String response = restTemplate.getForObject(createUrl(), String.class);
+
+		Assertions.assertThat(response).isNotNull();
+
+		JsonObject	page = new Gson().fromJson(response, JsonObject.class);
+
+		Assertions.assertThat(page.get("numberOfElements").getAsLong()).isEqualTo(0L);
+	}
+
+	private String createUrl() {
+		return createUrl(null);
+	}
+
+	private String createUrl(UUID id) {
+		StringBuffer	buffer = new StringBuffer("http://localhost:");
+
+		buffer.append(port);
+		buffer.append("/api/address");
+		if (id != null) {
+			buffer.append("/");
+			buffer.append(id);
+		}
+
+		return buffer.toString();
+	}
+
+	@Test
+	public void testPostResource() throws Exception {
+
+		Address	testdata = createAddress(1000);
+
+		createResourceAndCheck(testdata);
+	}
+
+	private Address createAddress(int number) {
+		Address address = new Address();
+
+		address.setStreet(number + " Test Street");
+		address.setCity("Test City");
+		address.setState("Test State");
+		address.setZip("0" + number);
+		address.setCountry("Test Country");
+		address.setActive(true);
+
+		return address;
+	}
+
+	/**
+	 *
+	 * @param expected
+	 * @return posted resource
+	 */
+	private Address createResourceAndCheck(Address expected) {
+		Address actual = restTemplate.postForObject(createUrl(), expected, Address.class);
+
+		Assertions.assertThat(actual).isNotNull();
+
+		Assertions.assertThat(actual.getId()).isNotNull();
+		Assertions.assertThat(actual.isActive()).isEqualTo(expected.isActive());
+		Assertions.assertThat(actual.getCreatedDate()).isNotNull();
+		Assertions.assertThat(actual.getCreatedBy()).isNotNull();
+		Assertions.assertThat(actual.getUpdatedDate()).isNotNull();
+		Assertions.assertThat(actual.getUpdatedBy()).isNotNull();
+
+		Assertions.assertThat(actual.getStreet()).isEqualTo(expected.getStreet());
+		Assertions.assertThat(actual.getCity()).isEqualTo(expected.getCity());
+		Assertions.assertThat(actual.getState()).isEqualTo(expected.getState());
+		Assertions.assertThat(actual.getZip()).isEqualTo(expected.getZip());
+		Assertions.assertThat(actual.getCountry()).isEqualTo(expected.getCountry());
+
+		return actual;
+	}
+
+	@Test
+	public void testGetResource() throws Exception {
+
+		Address	testdata 	= createAddress(1001);
+		Address	expected	= createResourceAndCheck(testdata);
+
+		Address actual = restTemplate.getForObject(createUrl(expected.getId()), Address.class);
+
+		Assertions.assertThat(actual).isNotNull();
+
+		Assertions.assertThat(actual).isEqualTo(expected);
+	}
+
+	@Test
+	public void testUpdateResource() throws Exception {
+
+		Address	testdata 	= createAddress(1002);
+		Address	expected	= createResourceAndCheck(testdata);
+
+		expected.setActive(false);
+		restTemplate.put(createUrl(expected.getId()), expected);
+
+		Address actual = restTemplate.getForObject(createUrl(expected.getId()), Address.class);
+
+		Assertions.assertThat(actual).isNotNull();
+
+		Assertions.assertThat(actual.getUpdatedDate()).isAfterOrEqualTo(expected.getUpdatedDate());
+
+		expected.setUpdatedDate(actual.getUpdatedDate());
+		Assertions.assertThat(actual).isEqualTo(expected);
+	}
+
+	@Test
+	public void testDeleteResource() throws Exception {
+
+		Address	testdata 	= createAddress(1003);
+		Address	expected	= createResourceAndCheck(testdata);
+
+		restTemplate.delete(createUrl(expected.getId()));
+
+		ResponseEntity<Address> actual = restTemplate.getForEntity(createUrl(expected.getId()), Address.class);
+
+		Assertions.assertThat(actual.getStatusCode().value()).isEqualTo(500);
+	}
+
+}
