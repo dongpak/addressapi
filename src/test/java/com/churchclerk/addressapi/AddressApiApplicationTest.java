@@ -1,9 +1,13 @@
+/*
+ */
 package com.churchclerk.addressapi;
 
 
 import com.churchclerk.addressapi.api.AddressApi;
 import com.churchclerk.addressapi.model.Address;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
@@ -14,10 +18,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 
+import java.util.Iterator;
 import java.util.UUID;
+import java.util.function.Consumer;
 
+/**
+ *
+ */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class AddressApiApplicationTest {
@@ -59,6 +69,17 @@ public class AddressApiApplicationTest {
 		}
 
 		return buffer.toString();
+	}
+
+	private JsonObject getResourcesAndCheck(String url, long count) {
+		String response = restTemplate.getForObject(url, String.class);
+
+		Assertions.assertThat(response).isNotNull();
+
+		JsonObject page = new Gson().fromJson(response, JsonObject.class);
+
+		Assertions.assertThat(page.get("numberOfElements").getAsLong()).isEqualTo(count);
+		return page;
 	}
 
 	@Test
@@ -170,16 +191,6 @@ public class AddressApiApplicationTest {
 		getResourcesAndCheck(createPaginationUrl(9, 5), 0L);
 	}
 
-	private void getResourcesAndCheck(String url, long count) {
-		String response = restTemplate.getForObject(url, String.class);
-
-		Assertions.assertThat(response).isNotNull();
-
-		JsonObject page = new Gson().fromJson(response, JsonObject.class);
-
-		Assertions.assertThat(page.get("numberOfElements").getAsLong()).isEqualTo(count);
-	}
-
 	private String createPaginationUrl(int page, int size) {
 		StringBuffer buffer = new StringBuffer(createUrl());
 
@@ -210,5 +221,47 @@ public class AddressApiApplicationTest {
 		buffer.append(value);
 
 		return buffer.toString();
+	}
+
+	@Test
+	@Order(8)
+	public void testGetResourcesSort() throws Exception {
+
+		createResourceAndCheck(createAddress(1008));
+		createResourceAndCheck(createAddress(1009));
+
+		getResourcesAndCheck(createSortUrl("street"), 8L, Sort.Direction.ASC);
+		getResourcesAndCheck(createSortUrl("-street"), 8L, Sort.Direction.DESC);
+	}
+
+	private String createSortUrl(String keys) {
+		StringBuffer buffer = new StringBuffer(createUrl());
+
+		buffer.append("?sortBy=");
+		buffer.append(keys);
+
+		return buffer.toString();
+	}
+
+	private void getResourcesAndCheck(String url, long count, final Sort.Direction dir) {
+		JsonObject 	page 		= getResourcesAndCheck(url, count);
+		JsonArray	content		= page.getAsJsonArray("content");
+		String 		previous 	= null;
+
+		Iterator<JsonElement> iter = content.iterator();
+
+		while (iter.hasNext()) {
+			String street = iter.next().getAsJsonObject().get("street").getAsString();
+
+			if (previous != null) {
+				if (dir.equals(Sort.Direction.ASC)) {
+					Assertions.assertThat(street).isGreaterThanOrEqualTo(previous);
+				}
+				else {
+					Assertions.assertThat(street).isLessThanOrEqualTo(previous);
+				}
+			}
+			previous = street;
+		}
 	}
 }
