@@ -12,13 +12,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
 import java.util.*;
 
 
@@ -37,74 +32,9 @@ public class AddressService {
 
 	/**
 	 *
-	 */
-	public class ResourceSpec implements Specification<AddressEntity> {
-
-		private Address criteria = null;
-
-		/**
-		 *
-		 * @param criteria
-		 */
-		public ResourceSpec(Address criteria) {
-			this.criteria = criteria;
-		}
-
-		@Override
-		public Predicate toPredicate(Root<AddressEntity> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
-			List<Predicate> predicates	= new ArrayList<Predicate>();
-
-			addPredicate(criteriaBuilder, root, "street", criteria.getStreet(), predicates);
-			addPredicate(criteriaBuilder, root, "city", criteria.getCity(), predicates);
-			addPredicate(criteriaBuilder, root, "state", criteria.getState(), predicates);
-			addPredicate(criteriaBuilder, root, "zip", criteria.getZip(), predicates);
-			addPredicate(criteriaBuilder, root, "country", criteria.getCountry(), predicates);
-			addPredicate(criteriaBuilder, root, "active", criteria.isActive(), predicates);
-
-			if (predicates.isEmpty()) {
-				return null;
-			}
-
-			return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-		}
-
-		private void addPredicate(CriteriaBuilder criteriaBuilder, Root<AddressEntity> root, String field, String value, List<Predicate> predicates) {
-			Predicate predicate = null;
-
-			if (value != null) {
-				if (value.trim().isEmpty()) {
-					predicate = criteriaBuilder.isEmpty(root.get(field));
-				} else if (value.contains("%")) {
-					predicate = criteriaBuilder.like(root.get(field), value);
-				} else {
-					predicate = criteriaBuilder.equal(root.get(field), value);
-				}
-			}
-
-			if (predicate != null) {
-				predicates.add(predicate);
-			}
-		}
-
-		private void addPredicate(CriteriaBuilder criteriaBuilder, Root<AddressEntity> root, String field, Boolean value, List<Predicate> predicates) {
-			Predicate predicate = null;
-
-			if (value != null) {
-				predicate = criteriaBuilder.equal(root.get(field), value);
-			}
-
-			if (predicate != null) {
-				predicates.add(predicate);
-			}
-		}
-	}
-
-	/**
-	 *
 	 * @return
 	 */
 	public Page<? extends Address> getResources(Pageable pageable, Address criteria) {
-		List<Address>	list	= new ArrayList<Address>();
 
 		Page<AddressEntity> page = storage.findAll(new ResourceSpec(criteria), pageable);
 
@@ -132,8 +62,7 @@ public class AddressService {
 
 		entity.copy(resource);
 
-		storage.save(entity);
-		return entity;
+		return storage.save(entity);
 	}
 
 	/**
@@ -148,7 +77,7 @@ public class AddressService {
 			AddressEntity entity = optional.get();
 
 			entity.copy(resource);
-			storage.save(entity);
+			return storage.save(entity);
 		}
 
 		return resource;
