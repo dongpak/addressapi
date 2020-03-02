@@ -175,11 +175,13 @@ public class AddressApi extends BaseApi {
 	@Consumes({MediaType.APPLICATION_JSON})
 	@Produces({MediaType.APPLICATION_JSON})
 	public Response updateResource(Address resource) {
+		resource.setId(UUID.fromString(id));
 		resource.setUpdatedBy("SYS");
 		resource.setUpdatedDate(new Date());
 
-		service.updateResource(resource);
-		return Response.ok(resource).build();
+		return Response.ok(
+				service.updateResource(resource)
+		).build();
 	}
 
 	@DELETE

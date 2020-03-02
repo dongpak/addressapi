@@ -20,10 +20,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.ws.rs.core.Response;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 /**
  *
@@ -36,18 +33,20 @@ public class AddressApiTest {
 	private AddressApi		testObject;
 
 	@Mock
-	private AddressService	service;
+	private AddressService	testService;
 
-
-
-	private Address 		testData;
+	private Date			testDate;
+	private String			testId;
+	private Address 		testResource;
 	private AddressEntity	testEntity;
 
 
 	@BeforeEach
 	public void setupMock() {
-		testData 	= new Address();
-		testEntity	= new AddressEntity();
+		testDate		= new Date();
+		testId			= UUID.randomUUID().toString();
+		testResource	= new Address();
+		testEntity		= new AddressEntity();
 	}
 
 	@Test
@@ -60,66 +59,87 @@ public class AddressApiTest {
 	public void testGetResources() throws Exception {
 		ReflectionTestUtils.setField(testObject, "sortBy", "street");
 
-		Mockito.when(service.getResources(null, null)).thenReturn(null);
+		Mockito.when(testService.getResources(null, null)).thenReturn(null);
 
-		Response actual = testObject.getResources();
+		Response response = testObject.getResources();
 
-		Assertions.assertThat(actual.getEntity()).isNull();
+		Assertions.assertThat(response.getEntity()).isNull();
 	}
 
 
 	@Test
 	public void testGetResource() throws Exception {
-//		String	id = "TEST_ID";
-//
-//		Mockito.when(storage.findById(id)).thenReturn(Optional.of(testEntity));
-//		Address actual = testObject.getResource(id);
-//
-//		Assertions.assertThat(actual).isEqualTo(testEntity);
+
+		ReflectionTestUtils.setField(testObject, "id", testId);
+
+		Mockito.when(testService.getResource(testId)).thenReturn(null);
+
+		Response response = testObject.getResource();
+
+		Assertions.assertThat(response.getEntity()).isNull();
 	}
 
 	@Test
 	public void testCreateResource() throws Exception {
 
-//		Mockito.when(storage.save(testEntity)).thenReturn(testEntity);
-//
-//		Address actual = testObject.createResource(testData);
-//
-//		Assertions.assertThat(actual).isEqualTo(testEntity);
+		Mockito.when(testService.createResource(testResource)).thenReturn(testResource);
+
+		Response response = testObject.createResource(testResource);
+
+		Assertions.assertThat(response.getEntity()).isNotNull();
+		Assertions.assertThat(response.getEntity()).isInstanceOf(Address.class);
+
+		Address actual = (Address) response.getEntity();
+		Assertions.assertThat(actual.getId()).isNotNull();
+		Assertions.assertThat(actual.getId()).isEqualTo(UUID.fromString(actual.getId().toString()));
+		Assertions.assertThat(actual.isActive()).isEqualTo(true);
+		Assertions.assertThat(actual.getCreatedBy()).isEqualTo("SYS");
+		Assertions.assertThat(actual.getCreatedDate()).isAfterOrEqualTo(testDate);
+		Assertions.assertThat(actual.getUpdatedBy()).isEqualTo("SYS");
+		Assertions.assertThat(actual.getUpdatedDate()).isAfterOrEqualTo(testDate);
+
 	}
 
 	@Test
 	public void testUpdateResource() throws Exception {
-//		testData.setId(UUID.randomUUID());
-//
-//		Mockito.when(storage.findById(testData.getId().toString())).thenReturn(Optional.of(testEntity));
-//		Mockito.when(storage.save(testEntity)).thenReturn(testEntity);
-//
-//		Address actual = testObject.updateResource(testData);
-//
-//		Assertions.assertThat(actual).isEqualTo(testEntity);
+
+		ReflectionTestUtils.setField(testObject, "id", testId);
+
+		Mockito.when(testService.updateResource(testResource)).thenReturn(testResource);
+
+		Response response = testObject.updateResource(testResource);
+
+		Assertions.assertThat(response.getEntity()).isNotNull();
+		Assertions.assertThat(response.getEntity()).isInstanceOf(Address.class);
+
+		Address actual = (Address) response.getEntity();
+		Assertions.assertThat(actual.getId()).isNotNull();
+		Assertions.assertThat(actual.getId().toString()).isEqualTo(testId);
+		Assertions.assertThat(actual.isActive()).isEqualTo(false);
+		Assertions.assertThat(actual.getUpdatedBy()).isEqualTo("SYS");
+		Assertions.assertThat(actual.getUpdatedDate()).isAfterOrEqualTo(testDate);
 	}
 
 	@Test
 	public void testUpdateResourceNotExist() throws Exception {
-//		testData.setId(UUID.randomUUID());
-//
-//		Mockito.when(storage.findById(testData.getId().toString())).thenReturn(Optional.ofNullable(null));
-//
-//		Address actual = testObject.updateResource(testData);
-//
-//		Assertions.assertThat(actual).isEqualTo(testData);
+		ReflectionTestUtils.setField(testObject, "id", testId);
+
+		Mockito.when(testService.updateResource(testResource)).thenReturn(null);
+
+		Response response = testObject.updateResource(testResource);
+
+		Assertions.assertThat(response.getEntity()).isNull();
 	}
 
 	@Test
 	public void testDeleteResource() throws Exception {
-//		testData.setId(UUID.randomUUID());
-//
-//		Mockito.when(storage.findById(testData.getId().toString())).thenReturn(Optional.of(testEntity));
-//		//Mockito.when(storage.deleteById(testData.getId().toString())).;
-//
-//		Address actual = testObject.deleteResource(testData.getId().toString());
-//
-//		Assertions.assertThat(actual).isEqualTo(testEntity);
+		ReflectionTestUtils.setField(testObject, "id", testId);
+
+		Mockito.when(testService.deleteResource(testId)).thenReturn(testResource);
+
+		Response response = testObject.deleteResource();
+
+		Assertions.assertThat(response.getEntity()).isNotNull();
+		Assertions.assertThat(response.getEntity()).isEqualTo(testResource);
 	}
 }
