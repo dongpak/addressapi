@@ -47,6 +47,7 @@ sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
+    mavenLocal()
 }
 
 dependencies {
@@ -55,8 +56,11 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-jersey'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
     implementation 'com.auth0:java-jwt:3.2.0'
+    implementation 'com.churchclerk:securityapi:1.0'
+
     runtimeOnly 'mysql:mysql-connector-java'
     runtimeOnly 'org.liquibase:liquibase-core'
+
 
     testImplementation('org.springframework.boot:spring-boot-starter-test') {
         exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'

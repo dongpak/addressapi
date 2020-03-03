@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import javax.ws.rs.NotFoundException;
 import java.util.*;
 
 
@@ -92,10 +93,11 @@ public class AddressService {
 	public Address deleteResource(String id) {
 		Optional<AddressEntity> optional = storage.findById(id);
 
-		if (optional.isPresent()) {
-			storage.deleteById(id);
+		if (optional.isPresent() == false) {
+			throw new NotFoundException("No such resource with id: " + id);
 		}
 
+		storage.deleteById(id);
 		return optional.get();
 	}
 }

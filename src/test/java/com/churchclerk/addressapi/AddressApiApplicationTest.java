@@ -5,22 +5,25 @@ package com.churchclerk.addressapi;
 
 import com.churchclerk.addressapi.api.AddressApi;
 import com.churchclerk.addressapi.model.Address;
+import com.churchclerk.addressapi.storage.AddressEntity;
+import com.churchclerk.securityapi.SecurityApi;
+import com.churchclerk.securityapi.SecurityToken;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 
+import java.net.Inet4Address;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -32,14 +35,52 @@ import java.util.function.Consumer;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class AddressApiApplicationTest {
 
-	@Autowired
-	private AddressApi api;
+	private static final String 	TOKEN_PREFIX 	= "Bearer ";
+	private static final String 	HEADER_AUTH 	= "Authorization";
+
 
 	@LocalServerPort
-	private int port;
+	private int 		port;
+
+	@Value("${jwt.secret}")
+	private String		testSecret;
 
 	@Autowired
-	private TestRestTemplate restTemplate;
+	private AddressApi	api;
+
+	@Autowired
+	private TestRestTemplate	restTemplate;
+
+	private SecurityToken		testToken;
+
+	private HttpHeaders 		testHeaders;
+
+	@BeforeEach
+	public void setupMock() {
+
+		try {
+			if (createToken("test", Inet4Address.getLoopbackAddress().getHostAddress()) == false) {
+				throw new RuntimeException("Error creating security token");
+			}
+
+			testHeaders = new HttpHeaders();
+			testHeaders.add(HEADER_AUTH, TOKEN_PREFIX+testToken.getJwt());
+			testHeaders.add("Content-Type", "application/json");
+		}
+		catch (Exception e) {
+			throw new RuntimeException("Error creating security token", e);
+		}
+	}
+
+	private boolean createToken(String id, String location) {
+		testToken = new SecurityToken();
+
+		testToken.setId(id);
+		testToken.setLocation(location);
+		testToken.setSecret(testSecret);
+
+		return SecurityApi.process(testToken);
+	}
 
 	@Test
 	@Order(0)
@@ -72,11 +113,14 @@ public class AddressApiApplicationTest {
 	}
 
 	private JsonObject getResourcesAndCheck(String url, long count) {
-		String response = restTemplate.getForObject(url, String.class);
+
+		HttpEntity<String>		entity 		= new HttpEntity<String>(testHeaders);
+		ResponseEntity<String>	response	= restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
 
 		Assertions.assertThat(response).isNotNull();
+		Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-		JsonObject page = new Gson().fromJson(response, JsonObject.class);
+		JsonObject page = new Gson().fromJson(response.getBody(), JsonObject.class);
 
 		Assertions.assertThat(page.get("numberOfElements").getAsLong()).isEqualTo(count);
 		return page;
@@ -110,7 +154,14 @@ public class AddressApiApplicationTest {
 	 * @return posted resource
 	 */
 	private Address createResourceAndCheck(Address expected) {
-		Address actual = restTemplate.postForObject(createUrl(), expected, Address.class);
+
+		HttpEntity<Address>		entity 		= new HttpEntity<Address>(expected, testHeaders);
+		ResponseEntity<Address>	response	= restTemplate.exchange(createUrl(), HttpMethod.POST, entity, Address.class);
+
+		Assertions.assertThat(response).isNotNull();
+		Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+		Address	actual = response.getBody();
 
 		Assertions.assertThat(actual).isNotNull();
 
@@ -137,10 +188,15 @@ public class AddressApiApplicationTest {
 		Address	testdata 	= createAddress(1001);
 		Address	expected	= createResourceAndCheck(testdata);
 
-		Address actual = restTemplate.getForObject(createUrl(expected.getId()), Address.class);
+		HttpEntity<Address>		entity 		= new HttpEntity<Address>(testHeaders);
+		ResponseEntity<Address>	response	= restTemplate.exchange(createUrl(expected.getId()), HttpMethod.GET, entity, Address.class);
+
+		Assertions.assertThat(response).isNotNull();
+		Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+		Address	actual = response.getBody();
 
 		Assertions.assertThat(actual).isNotNull();
-
 		Assertions.assertThat(actual).isEqualTo(expected);
 	}
 
@@ -152,12 +208,15 @@ public class AddressApiApplicationTest {
 		Address	expected	= createResourceAndCheck(testdata);
 
 		expected.setActive(false);
-		restTemplate.put(createUrl(expected.getId()), expected);
+		HttpEntity<Address>		entity 		= new HttpEntity<Address>(expected, testHeaders);
+		ResponseEntity<Address>	response	= restTemplate.exchange(createUrl(expected.getId()), HttpMethod.PUT, entity, Address.class);
 
-		Address actual = restTemplate.getForObject(createUrl(expected.getId()), Address.class);
+		Assertions.assertThat(response).isNotNull();
+		Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+		Address	actual = response.getBody();
 
 		Assertions.assertThat(actual).isNotNull();
-
 		Assertions.assertThat(actual.getUpdatedDate()).isAfterOrEqualTo(expected.getUpdatedDate());
 
 		expected.setUpdatedDate(actual.getUpdatedDate());
@@ -171,11 +230,19 @@ public class AddressApiApplicationTest {
 		Address	testdata 	= createAddress(1003);
 		Address	expected	= createResourceAndCheck(testdata);
 
-		restTemplate.delete(createUrl(expected.getId()));
+		// delete
+		HttpEntity<Address>		entity 		= new HttpEntity<Address>(testHeaders);
+		ResponseEntity<Address>	response	= restTemplate.exchange(createUrl(expected.getId()), HttpMethod.DELETE, entity, Address.class);
 
-		ResponseEntity<Address> actual = restTemplate.getForEntity(createUrl(expected.getId()), Address.class);
+		Assertions.assertThat(response).isNotNull();
+		Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-		Assertions.assertThat(actual.getStatusCode().value()).isEqualTo(500);
+		// try getting the deleted resource
+		HttpEntity<Address>		entity2 	= new HttpEntity<Address>(testHeaders);
+		ResponseEntity<Address>	response2	= restTemplate.exchange(createUrl(expected.getId()), HttpMethod.DELETE, entity2, Address.class);
+
+		Assertions.assertThat(response2).isNotNull();
+		Assertions.assertThat(response2.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
 
 	@Test

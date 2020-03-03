@@ -9,6 +9,7 @@ import com.churchclerk.addressapi.service.AddressService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -69,17 +70,9 @@ public class AddressApi extends BaseApi {
 	@QueryParam("sortBy")
 	private String sortBy;
 
-
-	
-//	@Autowired
-//	private AuthenticationService	security;
-
 	@Autowired
 	private AddressService			service;
 
-	@Context
-	protected HttpServletRequest httpRequest;
-	
 
 	/**
 	 * 
@@ -93,9 +86,15 @@ public class AddressApi extends BaseApi {
 	@Produces({MediaType.APPLICATION_JSON})
 
 	public Response getResources() {
-		Pageable pageable = PageRequest.of(page, size, createSort());
+		try {
+			verifyToken();
+			Pageable pageable = PageRequest.of(page, size, createSort());
 
-		return Response.ok(service.getResources(pageable, createCriteria())).build();
+			return Response.ok(service.getResources(pageable, createCriteria())).build();
+		}
+		catch (Throwable t) {
+			return generateErrorResponse(t);
+		}
 	}
 
 	private Address createCriteria() {
@@ -141,8 +140,13 @@ public class AddressApi extends BaseApi {
 	@Path("{id}")
 	@Produces({MediaType.APPLICATION_JSON})
 	public Response getResource() {
-
-		return Response.ok(service.getResource(id)).build();
+		try {
+			verifyToken();
+			return Response.ok(service.getResource(id)).build();
+		}
+		catch (Throwable t) {
+			return generateErrorResponse(t);
+		}
 	}
 
 	@POST
@@ -151,17 +155,17 @@ public class AddressApi extends BaseApi {
 	public Response createResource(Address resource) {
 		
 		try {
+			verifyToken();
 			if (resource.getId() == null) {
 				resource.setId(UUID.randomUUID());
 			}
 			resource.setActive(true);
-			resource.setCreatedBy("SYS");
+			resource.setCreatedBy(authToken.getId());
 			resource.setCreatedDate(new Date());
-			resource.setUpdatedBy("SYS");
+			resource.setUpdatedBy(authToken.getId());
 			resource.setUpdatedDate(new Date());
 
 			Address newResource = service.createResource(resource);
-			//security.createToken(username);
 			
 			return Response.ok(newResource).build();
 		}
@@ -175,13 +179,19 @@ public class AddressApi extends BaseApi {
 	@Consumes({MediaType.APPLICATION_JSON})
 	@Produces({MediaType.APPLICATION_JSON})
 	public Response updateResource(Address resource) {
-		resource.setId(UUID.fromString(id));
-		resource.setUpdatedBy("SYS");
-		resource.setUpdatedDate(new Date());
+		try {
+			verifyToken();
+			resource.setId(UUID.fromString(id));
+			resource.setUpdatedBy(authToken.getId());
+			resource.setUpdatedDate(new Date());
 
-		return Response.ok(
-				service.updateResource(resource)
-		).build();
+			return Response.ok(
+					service.updateResource(resource)
+			).build();
+		}
+		catch (Throwable t) {
+			return generateErrorResponse(t);
+		}
 	}
 
 	@DELETE
@@ -190,6 +200,7 @@ public class AddressApi extends BaseApi {
     public Response deleteResource() {
 		
 		try {
+			verifyToken();
 			return Response.ok(service.deleteResource(id)).build();
 		}
 		catch (Throwable t) {
