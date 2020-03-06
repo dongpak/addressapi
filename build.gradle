@@ -45,22 +45,22 @@ version '1.0-SNAPSHOT'
 
 sourceCompatibility = 1.8
 
-repositories {
-    mavenCentral()
-    mavenLocal()
-}
+    repositories {
+        mavenCentral()
+        mavenLocal()
+    }
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-jersey'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
-    implementation 'com.auth0:java-jwt:3.2.0'
+
     implementation 'com.churchclerk:securityapi:1.0'
 
     runtimeOnly 'mysql:mysql-connector-java'
     runtimeOnly 'org.liquibase:liquibase-core'
-
+    runtimeOnly 'com.auth0:java-jwt:3.2.0'
 
     testImplementation('org.springframework.boot:spring-boot-starter-test') {
         exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
