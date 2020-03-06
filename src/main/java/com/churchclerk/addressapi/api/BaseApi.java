@@ -94,10 +94,10 @@ public abstract class BaseApi {
 //			}
 //		}
 
-//		String addr = request.getHeader("x-forwarded-for");
-//		if ((addr != null) && (addr.trim().isEmpty() == false)) {
-//			return addr;
-//		}
+		String addr = httpRequest.getHeader("x-forwarded-for");
+		if ((addr != null) && (addr.trim().isEmpty() == false)) {
+			return addr;
+		}
 
 		return httpRequest.getRemoteAddr();
 	}
