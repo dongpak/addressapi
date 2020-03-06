@@ -53,6 +53,7 @@ public abstract class BaseApi {
 		String 			auth 	= httpRequest.getHeader("Authorization");
 
 		if (auth == null) {
+			logger.info("Authorization header required");
 			throw new NotAuthorizedException("Authorization reuired");
 		}
 
@@ -61,10 +62,12 @@ public abstract class BaseApi {
 
 		if (SecurityApi.process(token) == true) {
 			if (token.expired()) {
+				logger.info("Token expired");
 				throw new NotAuthorizedException("Token expired");
 			}
 
 			if (token.getLocation().equals(getRemoteAddr()) == false) {
+				logger.info("Invalid location: " + getRemoteAddr());
 				throw new NotAuthorizedException("Invalid location");
 			}
 

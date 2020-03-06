@@ -61,6 +61,7 @@ dependencies {
     runtimeOnly 'mysql:mysql-connector-java'
     runtimeOnly 'org.liquibase:liquibase-core'
     runtimeOnly 'com.auth0:java-jwt:3.2.0'
+//    runtimeOnly 'org.springframework.boot:spring-boot-starter-actuator'
 
     testImplementation('org.springframework.boot:spring-boot-starter-test') {
         exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
