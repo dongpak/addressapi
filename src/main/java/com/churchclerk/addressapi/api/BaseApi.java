@@ -15,6 +15,7 @@ import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import java.util.Enumeration;
 
 
 /**
@@ -68,6 +69,15 @@ public abstract class BaseApi {
 
 			if (token.getLocation().equals(getRemoteAddr()) == false) {
 				logger.info("Invalid location: " + getRemoteAddr());
+
+				Enumeration<String> en = httpRequest.getHeaderNames();
+				while (en.hasMoreElements()) {
+					String key	= en.nextElement();
+					String val	= httpRequest.getHeader(key);
+
+					logger.info("Header [" + key + "] -> " + val);
+				}
+			
 				throw new NotAuthorizedException("Invalid location");
 			}
 
@@ -83,16 +93,6 @@ public abstract class BaseApi {
 	 * @return
 	 */
 	public String getRemoteAddr() {
-
-//		if (debug) {
-//			Enumeration<String> en = request.getHeaderNames();
-//			while (en.hasMoreElements()) {
-//				String key	= en.nextElement();
-//				String val	= request.getHeader(key);
-//
-//				logger.info("Header [" + key + "] -> " + val);
-//			}
-//		}
 
 		String addr = httpRequest.getHeader("x-forwarded-for");
 		if ((addr != null) && (addr.trim().isEmpty() == false)) {
