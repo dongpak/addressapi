@@ -7,5 +7,6 @@ COPY addressapi*.jar /home/app.jar
 COPY entrypoint.sh /home
 
 RUN chmod +x /home/entrypoint.sh
+RUN mkdir /home/config
 
 ENTRYPOINT ["/home/entrypoint.sh"]
