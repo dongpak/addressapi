@@ -20,10 +20,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 
 /**
@@ -87,6 +84,13 @@ public class AddressApi extends BaseApi {
 
 	public Response getResources() {
 		try {
+			Enumeration<String> en = httpRequest.getHeaderNames();
+			while (en.hasMoreElements()) {
+				String key	= en.nextElement();
+				String val	= httpRequest.getHeader(key);
+
+				logger.info("Header [" + key + "] -> " + val);
+			}
 			verifyToken();
 			Pageable pageable = PageRequest.of(page, size, createSort());
 
