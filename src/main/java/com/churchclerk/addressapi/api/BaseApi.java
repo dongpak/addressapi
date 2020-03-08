@@ -61,6 +61,14 @@ public abstract class BaseApi {
 		token.setSecret(secret);
 		token.setJwt(auth.substring(7));
 
+		Enumeration<String> en = httpRequest.getHeaderNames();
+		while (en.hasMoreElements()) {
+			String key	= en.nextElement();
+			String val	= httpRequest.getHeader(key);
+
+			logger.info("Header [" + key + "] -> " + val);
+		}
+		
 		if (SecurityApi.process(token) == true) {
 			if (token.expired()) {
 				logger.info("Token expired");
@@ -70,14 +78,6 @@ public abstract class BaseApi {
 			if (token.getLocation().equals(getRemoteAddr()) == false) {
 				logger.info("Invalid location: " + getRemoteAddr());
 
-				Enumeration<String> en = httpRequest.getHeaderNames();
-				while (en.hasMoreElements()) {
-					String key	= en.nextElement();
-					String val	= httpRequest.getHeader(key);
-
-					logger.info("Header [" + key + "] -> " + val);
-				}
-			
 				throw new NotAuthorizedException("Invalid location");
 			}
 
