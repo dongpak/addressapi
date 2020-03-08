@@ -17,7 +17,6 @@ import javax.ws.rs.ApplicationPath;
  *
  */
 @SpringBootApplication
-@ApplicationPath("/churchclerk/address")
 public class AddressApiApplication {
 
 	private static Logger logger = LoggerFactory.getLogger(AddressApiApplication.class);
