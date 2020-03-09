@@ -9,4 +9,6 @@ COPY entrypoint.sh /home
 RUN chmod +x /home/entrypoint.sh
 RUN mkdir /home/config
 
+EXPOSE 8080
+
 ENTRYPOINT ["/home/entrypoint.sh"]
